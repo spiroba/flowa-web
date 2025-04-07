@@ -1,5 +1,3 @@
-import { db } from './firebase-config.js';
-
 // Базовая диагностика
 console.log('Начало выполнения скрипта');
 
@@ -11,6 +9,22 @@ console.log('Начало выполнения скрипта');
         window.console = { log: function() {} };
     }
 })();
+
+// Инициализация Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyDev8X0EEFOMQ8Gsf3eVi9xv9Sr1SRCCDE",
+    authDomain: "flowa-85234.firebaseapp.com",
+    projectId: "flowa-85234",
+    storageBucket: "flowa-85234.firebasestorage.app",
+    messagingSenderId: "28624424621",
+    appId: "1:28624424621:web:3cd6bf88fb02ffca65c024",
+    measurementId: "G-66VZ20FMV9"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const analytics = firebase.analytics();
 
 // Функция для отображения опроса
 async function showSurvey() {
