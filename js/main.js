@@ -1,6 +1,6 @@
 // Глобальная функция инициализации
-window.initializeFlowaSurvey = function() {
-    console.log('Инициализация Flowa - версия 1.4.0');
+window.initializeFlowaSurvey = function(retryCount = 0) {
+    console.log('Попытка инициализации Flowa #' + (retryCount + 1));
     
     // Получаем параметры из URL
     const params = new URLSearchParams(window.location.search);
@@ -17,17 +17,25 @@ window.initializeFlowaSurvey = function() {
     
     console.log('ID опроса:', surveyId);
     
-    // Функция отрисовки опроса
-    function renderSurvey() {
-        const container = document.getElementById('survey-content');
-        if (!container) {
-            console.error('Контейнер опроса не найден!');
-            return;
+    // Проверяем наличие контейнера
+    const container = document.getElementById('survey-content');
+    if (!container) {
+        console.log('Контейнер не найден, попытка #' + (retryCount + 1));
+        if (retryCount < 5) { // Пробуем максимум 5 раз
+            setTimeout(() => {
+                window.initializeFlowaSurvey(retryCount + 1);
+            }, 200); // Увеличиваем интервал между попытками
+        } else {
+            console.error('Не удалось найти контейнер после 5 попыток');
         }
-        
+        return;
+    }
+    
+    // Если контейнер найден, отображаем опрос
+    if (surveyId) {
         // Данные демо-опроса
         const survey = {
-            title: surveyId ? `Опрос #${surveyId}` : 'Демонстрационный опрос',
+            title: `Опрос #${surveyId}`,
             description: 'Пожалуйста, уделите несколько минут, чтобы оценить наш сервис',
             questions: [
                 {
@@ -84,7 +92,7 @@ window.initializeFlowaSurvey = function() {
             </div>
         `;
         
-        // Очищаем контейнер от спиннера и вставляем опрос
+        // Очищаем контейнер и вставляем опрос
         container.innerHTML = html;
         
         // Добавляем обработчик отправки
@@ -108,32 +116,21 @@ window.initializeFlowaSurvey = function() {
                 }, 1000);
             });
         }
-    }
-    
-    // Функция отображения ошибки
-    function renderError() {
-        const container = document.getElementById('survey-content');
-        if (container) {
-            container.innerHTML = `
-                <div class="no-survey">
-                    <p>Опрос не найден. Пожалуйста, убедитесь, что вы отсканировали правильный QR код.</p>
-                    <p>Если проблема повторяется, обратитесь к администратору.</p>
-                </div>
-            `;
-        }
-    }
-    
-    // Основная логика
-    if (surveyId) {
-        renderSurvey();
     } else {
-        renderError();
+        container.innerHTML = `
+            <div class="no-survey">
+                <p>Опрос не найден. Пожалуйста, убедитесь, что вы отсканировали правильный QR код.</p>
+                <p>Если проблема повторяется, обратитесь к администратору.</p>
+            </div>
+        `;
     }
 };
 
-// Запускаем инициализацию при загрузке страницы
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', window.initializeFlowaSurvey);
-} else {
+// Запускаем первую попытку инициализации немедленно
+window.initializeFlowaSurvey();
+
+// Дополнительно пробуем после полной загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOMContentLoaded событие');
     window.initializeFlowaSurvey();
-}
+});
