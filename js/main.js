@@ -1,116 +1,53 @@
-// Базовая диагностика при загрузке файла
-console.log('Загрузка main.js начата');
+// Базовая диагностика
+console.log('Начало выполнения скрипта');
 
-// Проверяем доступность console
-if (typeof console === 'undefined') {
-    window.console = {
-        log: function() {},
-        error: function() {}
-    };
-}
-
-// Глобальная функция инициализации
-window.initializeFlowaSurvey = function(retryCount = 0) {
+// Функция для проверки console
+(function() {
     try {
-        console.log('=== Попытка инициализации #' + (retryCount + 1) + ' ===');
-        console.log('DOM готов:', document.readyState);
-        console.log('URL:', window.location.href);
-        console.log('User Agent:', navigator.userAgent);
-        
-        // Получаем ID опроса
-        const params = new URLSearchParams(window.location.search);
-        let surveyId = params.get('surveyId');
-        
-        if (!surveyId) {
-            const path = window.location.pathname;
-            console.log('Путь:', path);
-            const matches = path.match(/\/p\/([^\/]+)\/?$/);
-            if (matches && matches[1]) {
-                surveyId = matches[1];
-                console.log('ID получен из пути:', surveyId);
-            }
-        } else {
-            console.log('ID получен из параметров:', surveyId);
-        }
-        
-        // Проверяем наличие контейнера
+        console.log('Проверка console.log');
+    } catch (e) {
+        window.console = { log: function() {} };
+    }
+})();
+
+// Простая функция для отображения опроса
+function showSurvey() {
+    console.log('Вызвана функция showSurvey');
+    try {
         const container = document.getElementById('survey-content');
         console.log('Контейнер найден:', !!container);
         
-        if (!container) {
-            console.log('DOM структура:', document.documentElement.innerHTML.substring(0, 200));
-            if (retryCount < 5) {
-                console.log('Повторная попытка через 200мс');
-                setTimeout(() => window.initializeFlowaSurvey(retryCount + 1), 200);
-            } else {
-                console.error('Не удалось найти контейнер после 5 попыток');
-            }
-            return;
-        }
-        
-        // Отображаем опрос
-        if (surveyId) {
-            console.log('Отображаем опрос:', surveyId);
-            const html = `
+        if (container) {
+            const params = new URLSearchParams(window.location.search);
+            const surveyId = params.get('surveyId') || 'DEMO';
+            console.log('ID опроса:', surveyId);
+            
+            container.innerHTML = `
                 <div class="survey-header">
-                    <h3>Опрос #${surveyId}</h3>
-                    <p>Демо-версия опроса</p>
+                    <h3>Тестовый опрос #${surveyId}</h3>
                 </div>
                 <div class="survey-questions">
                     <div class="question">
-                        <div class="question-text">Как вам наш сервис?</div>
-                        <div class="rating-control">
-                            <label><input type="radio" name="q1" value="1"><span>1</span></label>
-                            <label><input type="radio" name="q1" value="2"><span>2</span></label>
-                            <label><input type="radio" name="q1" value="3"><span>3</span></label>
-                            <label><input type="radio" name="q1" value="4"><span>4</span></label>
-                            <label><input type="radio" name="q1" value="5"><span>5</span></label>
-                        </div>
+                        <p>Работает ли опрос?</p>
+                        <button onclick="alert('Да, работает!')">Да</button>
                     </div>
                 </div>
-                <button onclick="alert('Спасибо за ответ!')">Отправить</button>
             `;
-            container.innerHTML = html;
             console.log('Опрос отображен');
-        } else {
-            console.log('ID опроса не найден');
-            container.innerHTML = '<p>Опрос не найден</p>';
         }
     } catch (error) {
-        console.error('Ошибка при инициализации:', error);
+        console.error('Ошибка:', error);
     }
-};
+}
 
-// Отслеживаем все этапы загрузки страницы
-document.addEventListener('readystatechange', (event) => {
-    console.log('Состояние DOM изменилось:', document.readyState);
-});
-
-// Запускаем сразу
-console.log('Запуск первой инициализации');
-window.initializeFlowaSurvey();
-
-// И после загрузки DOM
-document.addEventListener('DOMContentLoaded', () => {
+// Отслеживаем загрузку страницы
+document.addEventListener('DOMContentLoaded', function() {
     console.log('DOMContentLoaded наступил');
-    window.initializeFlowaSurvey();
+    showSurvey();
 });
 
-// Дополнительная попытка после полной загрузки
-window.addEventListener('load', () => {
-    console.log('Страница полностью загружена');
-    window.initializeFlowaSurvey();
-});
+// Пробуем запустить сразу
+console.log('Пробуем запустить showSurvey немедленно');
+showSurvey();
 
-// Отслеживаем ошибки
-window.onerror = function(msg, url, line, col, error) {
-    console.error('=== Ошибка JavaScript ===');
-    console.error('Сообщение:', msg);
-    console.error('URL:', url);
-    console.error('Строка:', line);
-    console.error('Колонка:', col);
-    console.error('Стек вызовов:', error && error.stack);
-    return false;
-};
-
-console.log('Загрузка main.js завершена');
+console.log('Конец выполнения скрипта');
