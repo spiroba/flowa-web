@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
     
-    // Функция для немедленного форсирования загрузки
+    // Функция для немедленного отображения демо-опроса
     function forceLoadDemoSurvey(surveyId) {
         console.log(`Принудительная загрузка демо-опроса для ID: ${surveyId}`);
         const surveyData = { ...demoSurveys.default };
@@ -161,23 +161,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadSurveyContent() {
         const params = getUrlParams();
         const surveyId = params.surveyId || params.id || '';
-        const surveyContent = document.getElementById('survey-content');
         
         console.log(`Начало загрузки опроса с ID: ${surveyId}`);
         
         if (surveyId) {
-            // Показываем сначала загрузчик
-            surveyContent.innerHTML = `
-                <div class="loading-spinner">
-                    <div class="spinner"></div>
-                    <p>Загрузка опроса ID: ${surveyId}...</p>
-                </div>
-            `;
-            
-            // Сразу показываем демо опрос без задержки!
-            setTimeout(() => {
-                forceLoadDemoSurvey(surveyId);
-            }, 100); // Уменьшено до 100мс - минимальная задержка
+            // НЕМЕДЛЕННО показываем демо-опрос без задержки
+            forceLoadDemoSurvey(surveyId);
             
             // Попытка получить реальные данные выполняется параллельно, но не блокирует отображение
             fetchSurveyData(surveyId)
@@ -190,6 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         } else {
             console.log('ID опроса не указан, отображаем пустую страницу');
+            const surveyContent = document.getElementById('survey-content');
             surveyContent.innerHTML = `
                 <div class="no-survey">
                     <p>Опрос не найден. Пожалуйста, убедитесь, что вы отсканировали правильный QR код.</p>
