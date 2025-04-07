@@ -12,6 +12,15 @@ document.addEventListener('DOMContentLoaded', function() {
             params[key] = value;
         }
         
+        // Извлекаем ID опроса также из пути, если он присутствует в формате /p/{code}
+        const pathParts = window.location.pathname.split('/');
+        if (pathParts.length >= 3 && pathParts[1] === 'p') {
+            params.surveyId = pathParts[2];
+        }
+        
+        // Логируем параметры для отладки
+        console.log('Полученные параметры URL:', params);
+        
         return params;
     }
     
@@ -40,9 +49,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Эмуляция загрузки данных опроса (вместо реального API)
     function fetchSurveyData(surveyId) {
         return new Promise((resolve, reject) => {
-            // Уменьшаем задержку до 500мс для более быстрой загрузки
+            // Уменьшаем задержку до 300мс для более быстрой загрузки
             setTimeout(() => {
                 if (surveyId) {
+                    console.log(`Получение данных для опроса с ID: ${surveyId}`);
                     // Для демонстрации всегда используем один и тот же опрос,
                     // но используем ID из URL для персонализации
                     const surveyData = { ...demoSurveys.default };
@@ -50,14 +60,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     surveyData.title = `Опрос #${surveyId}`;
                     resolve(surveyData);
                 } else {
+                    console.error('ID опроса не найден');
                     reject(new Error('Идентификатор опроса не найден'));
                 }
-            }, 500); // Уменьшаем до 500мс для более быстрого отображения
+            }, 300); // Еще меньше задержка для более быстрого отображения
         });
     }
     
     // Отрисовка опроса
     function renderSurvey(surveyData) {
+        console.log('Отрисовка опроса:', surveyData);
         const surveyContent = document.getElementById('survey-content');
         
         const surveyHtml = `
@@ -83,6 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Отрисовка вопроса в зависимости от типа
     function renderQuestion(question) {
+        console.log('Отрисовка вопроса:', question);
         let questionHtml = `
             <div class="question" data-id="${question.id}">
                 <div class="question-text">${question.text}</div>
@@ -113,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Эмуляция отправки данных
     function submitSurvey(surveyId) {
+        console.log(`Отправка данных опроса с ID: ${surveyId}`);
         const submitBtn = document.getElementById('submit-survey');
         submitBtn.disabled = true;
         submitBtn.textContent = 'Отправка...';
@@ -135,47 +149,50 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Функция для немедленного форсирования загрузки
     function forceLoadDemoSurvey(surveyId) {
+        console.log(`Принудительная загрузка демо-опроса для ID: ${surveyId}`);
         const surveyData = { ...demoSurveys.default };
-        surveyData.id = surveyId;
-        surveyData.title = `Опрос #${surveyId}`;
+        surveyData.id = surveyId || 'DEMO';
+        surveyData.title = surveyId ? `Опрос #${surveyId}` : 'Демонстрационный опрос';
         renderSurvey(surveyData);
     }
     
     // Загрузка контента опроса
     function loadSurveyContent() {
         const params = getUrlParams();
+        const surveyId = params.surveyId || params.id || '';
         const surveyContent = document.getElementById('survey-content');
         
-        if (params.surveyId) {
+        console.log(`Начало загрузки опроса с ID: ${surveyId}`);
+        
+        if (surveyId) {
             // Показываем сначала загрузчик
             surveyContent.innerHTML = `
                 <div class="loading-spinner">
                     <div class="spinner"></div>
-                    <p>Загрузка опроса ID: ${params.surveyId}...</p>
+                    <p>Загрузка опроса ID: ${surveyId}...</p>
                 </div>
             `;
             
-            // Добавляем таймаут, чтобы принудительно показать опрос,
-            // если он не загрузился в течение 3 секунд
+            // Добавляем очень короткий таймаут, чтобы принудительно показать опрос
+            // практически сразу, не дожидаясь сетевого запроса
             const forceLoadTimeout = setTimeout(() => {
-                forceLoadDemoSurvey(params.surveyId);
-            }, 3000);
+                console.log(`Срабатывание таймаута для загрузки демо-опроса: ${surveyId}`);
+                forceLoadDemoSurvey(surveyId);
+            }, 500); // 500мс для отображения индикатора загрузки
             
-            fetchSurveyData(params.surveyId)
+            fetchSurveyData(surveyId)
                 .then(data => {
                     clearTimeout(forceLoadTimeout); // Очищаем таймаут если данные пришли нормально
                     renderSurvey(data);
                 })
                 .catch(error => {
                     clearTimeout(forceLoadTimeout); // Очищаем таймаут если произошла ошибка
-                    surveyContent.innerHTML = `
-                        <div class="error-message">
-                            <p>Ошибка при загрузке опроса: ${error.message}</p>
-                            <button class="btn" onclick="location.reload()">Попробовать снова</button>
-                        </div>
-                    `;
+                    console.error('Ошибка загрузки опроса:', error);
+                    // Всё равно показываем демо опрос вместо ошибки
+                    forceLoadDemoSurvey(surveyId);
                 });
         } else {
+            console.log('ID опроса не указан, отображаем пустую страницу');
             surveyContent.innerHTML = `
                 <div class="no-survey">
                     <p>Опрос не найден. Пожалуйста, убедитесь, что вы отсканировали правильный QR код.</p>
