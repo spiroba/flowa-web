@@ -15,31 +15,39 @@ document.addEventListener('DOMContentLoaded', function() {
         return params;
     }
     
+    // Демо опросы для отображения
+    const demoSurveys = {
+        // Универсальный опрос, который будет показан для любого surveyId
+        "default": {
+            title: "Оценка качества обслуживания",
+            description: "Пожалуйста, уделите несколько минут, чтобы оценить наш сервис",
+            questions: [
+                {
+                    id: 1,
+                    type: "rating",
+                    text: "Насколько вы удовлетворены качеством обслуживания?",
+                    scale: 5
+                },
+                {
+                    id: 2,
+                    type: "text",
+                    text: "Что мы можем улучшить?"
+                }
+            ]
+        }
+    };
+    
     // Эмуляция загрузки данных опроса (вместо реального API)
     function fetchSurveyData(surveyId) {
         return new Promise((resolve, reject) => {
             // Эмулируем задержку запроса
             setTimeout(() => {
                 if (surveyId) {
-                    // Заглушка для демонстрации
-                    const surveyData = {
-                        id: surveyId,
-                        title: 'Оценка качества обслуживания',
-                        description: 'Пожалуйста, уделите несколько минут, чтобы оценить наш сервис',
-                        questions: [
-                            {
-                                id: 1,
-                                type: 'rating',
-                                text: 'Насколько вы удовлетворены качеством обслуживания?',
-                                scale: 5
-                            },
-                            {
-                                id: 2,
-                                type: 'text',
-                                text: 'Что мы можем улучшить?'
-                            }
-                        ]
-                    };
+                    // Для демонстрации всегда используем один и тот же опрос,
+                    // но используем ID из URL для персонализации
+                    const surveyData = { ...demoSurveys.default };
+                    surveyData.id = surveyId;
+                    surveyData.title = `Опрос #${surveyId}`;
                     resolve(surveyData);
                 } else {
                     reject(new Error('Идентификатор опроса не найден'));
@@ -131,6 +139,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const surveyContent = document.getElementById('survey-content');
         
         if (params.surveyId) {
+            // Показываем сначала загрузчик
+            surveyContent.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Загрузка опроса ID: ${params.surveyId}...</p>
+                </div>
+            `;
+            
             fetchSurveyData(params.surveyId)
                 .then(data => {
                     renderSurvey(data);

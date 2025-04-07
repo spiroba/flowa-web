@@ -318,3 +318,79 @@ footer {
     padding: 24px 16px;
     color: #e74c3c;
 }
+
+/* Стили для iOS Safari */
+@supports (-webkit-touch-callout: none) {
+    body {
+        /* Предотвращаем масштабирование на iOS */
+        -webkit-text-size-adjust: 100%;
+        /* Плавный скролл на iOS */
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    input[type="radio"], 
+    input[type="checkbox"] {
+        /* Увеличиваем целевую область для тап-события */
+        min-width: 22px;
+        min-height: 22px;
+    }
+    
+    .rating-item span {
+        /* Увеличиваем размер кнопок рейтинга для iOS */
+        width: 44px;
+        height: 44px;
+    }
+    
+    .btn {
+        /* Улучшаем тапабельность кнопок на iOS */
+        padding: 14px 24px;
+        min-height: 44px;
+    }
+}
+
+/* Общие улучшения для мобильных */
+@media (max-width: 480px) {
+    #app {
+        padding: 12px; 
+    }
+    
+    .question {
+        padding-bottom: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .rating-control {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .text-control textarea {
+        font-size: 16px; /* Предотвращает автоматическое масштабирование на iOS */
+    }
+    
+    /* Улучшаем отображение успешной отправки */
+    .success-message {
+        padding: 24px 0;
+    }
+    
+    .success-message h3 {
+        font-size: 20px;
+        margin-bottom: 8px;
+    }
+    
+    /* Убираем лишнее пространство на маленьких экранах */
+    .info-section {
+        margin-top: 16px;
+        padding: 16px 12px;
+    }
+    
+    .footer-links {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .divider {
+        display: none;
+    }
+}
