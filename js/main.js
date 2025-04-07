@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация приложения
-    console.log('Flowa web application initialized');
+    // Инициализация приложения с явным логированием
+    console.log('Flowa web application initialized - версия 1.2.0');
+    console.log('Проверка наличия элемента survey-content:', document.getElementById('survey-content') ? 'найден' : 'не найден');
     
     // Получаем параметры из URL
     function getUrlParams() {
@@ -50,7 +51,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Эмуляция загрузки данных опроса (вместо реального API)
     function fetchSurveyData(surveyId) {
         return new Promise((resolve, reject) => {
-            // Уменьшаем задержку до 300мс для более быстрой загрузки
+            console.log('Запуск fetchSurveyData для ID:', surveyId);
+            // Уменьшаем задержку до 100мс для максимально быстрой загрузки
             setTimeout(() => {
                 if (surveyId) {
                     console.log(`Получение данных для опроса с ID: ${surveyId}`);
@@ -64,14 +66,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('ID опроса не найден');
                     reject(new Error('Идентификатор опроса не найден'));
                 }
-            }, 300); // Еще меньше задержка для более быстрого отображения
+            }, 100); // Минимальная задержка для эмуляции API
         });
     }
     
     // Отрисовка опроса
     function renderSurvey(surveyData) {
-        console.log('Отрисовка опроса:', surveyData);
+        console.log('Начинаем отрисовку опроса:', surveyData);
         const surveyContent = document.getElementById('survey-content');
+        
+        if (!surveyContent) {
+            console.error('Элемент survey-content не найден в DOM!');
+            return;
+        }
+        
+        console.log('survey-content найден, продолжаем отрисовку');
         
         const surveyHtml = `
             <div class="survey-header">
@@ -87,11 +96,18 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         surveyContent.innerHTML = surveyHtml;
+        console.log('HTML опроса отрисован, добавляем обработчик');
         
         // Добавляем обработчик события для отправки
-        document.getElementById('submit-survey').addEventListener('click', function() {
-            submitSurvey(surveyData.id);
-        });
+        const submitButton = document.getElementById('submit-survey');
+        if (submitButton) {
+            submitButton.addEventListener('click', function() {
+                submitSurvey(surveyData.id);
+            });
+            console.log('Обработчик на кнопку добавлен');
+        } else {
+            console.error('Кнопка submit-survey не найдена после отрисовки!');
+        }
     }
     
     // Отрисовка вопроса в зависимости от типа
@@ -129,12 +145,22 @@ document.addEventListener('DOMContentLoaded', function() {
     function submitSurvey(surveyId) {
         console.log(`Отправка данных опроса с ID: ${surveyId}`);
         const submitBtn = document.getElementById('submit-survey');
+        if (!submitBtn) {
+            console.error('Кнопка отправки не найдена!');
+            return;
+        }
+        
         submitBtn.disabled = true;
         submitBtn.textContent = 'Отправка...';
         
         // Эмулируем отправку данных
         setTimeout(() => {
             const surveyContent = document.getElementById('survey-content');
+            if (!surveyContent) {
+                console.error('Элемент survey-content не найден при отправке!');
+                return;
+            }
+            
             surveyContent.innerHTML = `
                 <div class="success-message">
                     <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
@@ -145,16 +171,31 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p>Ваше мнение очень важно для нас.</p>
                 </div>
             `;
+            console.log('Успешно отображено сообщение об успешной отправке');
         }, 1000);
     }
     
     // Функция для немедленного отображения демо-опроса
     function forceLoadDemoSurvey(surveyId) {
-        console.log(`Принудительная загрузка демо-опроса для ID: ${surveyId}`);
+        console.log(`Начало принудительной загрузки демо-опроса для ID: ${surveyId}`);
         const surveyData = { ...demoSurveys.default };
         surveyData.id = surveyId || 'DEMO';
         surveyData.title = surveyId ? `Опрос #${surveyId}` : 'Демонстрационный опрос';
+        
+        // Явное удаление загрузчика перед отрисовкой
+        const surveyContent = document.getElementById('survey-content');
+        if (surveyContent) {
+            console.log('Очищаем содержимое перед загрузкой демо-опроса');
+            // Удаляем спиннер загрузки, если он есть
+            const spinner = surveyContent.querySelector('.loading-spinner');
+            if (spinner) {
+                spinner.remove();
+                console.log('Спиннер загрузки удален');
+            }
+        }
+        
         renderSurvey(surveyData);
+        console.log('Демо-опрос должен быть отрисован');
     }
     
     // Загрузка контента опроса
@@ -165,10 +206,12 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`Начало загрузки опроса с ID: ${surveyId}`);
         
         if (surveyId) {
+            console.log('ID опроса найден, начинаем загрузку демо-опроса');
             // НЕМЕДЛЕННО показываем демо-опрос без задержки
             forceLoadDemoSurvey(surveyId);
             
             // Попытка получить реальные данные выполняется параллельно, но не блокирует отображение
+            console.log('Параллельно запускаем загрузку реальных данных');
             fetchSurveyData(surveyId)
                 .then(data => {
                     // Реальные данные можно будет использовать в будущем
@@ -180,6 +223,11 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             console.log('ID опроса не указан, отображаем пустую страницу');
             const surveyContent = document.getElementById('survey-content');
+            if (!surveyContent) {
+                console.error('Элемент survey-content не найден для отображения сообщения об ошибке!');
+                return;
+            }
+            
             surveyContent.innerHTML = `
                 <div class="no-survey">
                     <p>Опрос не найден. Пожалуйста, убедитесь, что вы отсканировали правильный QR код.</p>
@@ -189,6 +237,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Инициализация приложения
-    loadSurveyContent();
+    // Запускаем инициализацию с небольшой задержкой для надежности
+    console.log('Запланирован запуск loadSurveyContent с задержкой 10мс');
+    setTimeout(loadSurveyContent, 10);
+    
+    // Экстренная диагностика - проверяем DOM каждые 500мс в течение 3 секунд
+    for (let i = 1; i <= 6; i++) {
+        setTimeout(() => {
+            const surveyContent = document.getElementById('survey-content');
+            console.log(`Диагностика #${i}: элемент survey-content ${surveyContent ? 'найден' : 'НЕ НАЙДЕН'}`);
+            if (surveyContent) {
+                console.log(`Содержимое: ${surveyContent.innerHTML.substring(0, 50)}...`);
+            }
+        }, i * 500);
+    }
 });
