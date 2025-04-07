@@ -3,29 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flowa - Интерактивные опросы</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Flowa - Перенаправление</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="icon" href="../favicon.ico" type="image/x-icon">
     
-    <!-- Перенаправление на корневую страницу с передачей ID опроса -->
+    <!-- Мгновенное перенаправление -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Получаем код опроса из URL пути
-            const path = window.location.pathname;
-            const pathParts = path.split('/');
-            const pollCode = pathParts[pathParts.length - 1] || '';
-            
-            // Получаем все параметры из URL
-            const queryParams = new URLSearchParams(window.location.search);
-            
-            // Добавляем параметр pollId
-            if (pollCode && pollCode !== 'index.html' && pollCode !== '') {
-                queryParams.set('surveyId', pollCode);
-            }
-            
-            // Перенаправляем на корневую страницу
-            window.location.href = `../?${queryParams.toString()}`;
-        });
+        // Получаем код опроса из URL пути
+        const path = window.location.pathname;
+        const pathParts = path.split('/');
+        const pollCode = pathParts[pathParts.length - 1] || '';
+        
+        // Получаем все параметры из URL
+        const queryParams = new URLSearchParams(window.location.search);
+        
+        // Добавляем параметр pollId
+        if (pollCode && pollCode !== 'index.html' && pollCode !== '') {
+            queryParams.set('surveyId', pollCode);
+        }
+        
+        // Перенаправляем на корневую страницу немедленно
+        window.location.href = `../?${queryParams.toString()}`;
     </script>
 </head>
 <body>
@@ -36,12 +37,10 @@
         
         <main>
             <section class="survey-section">
-                <h2>Опрос</h2>
-                <div id="survey-content">
-                    <div class="loading-spinner">
-                        <div class="spinner"></div>
-                        <p>Перенаправление...</p>
-                    </div>
+                <h2>Перенаправление...</h2>
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Перенаправление на страницу опроса...</p>
                 </div>
             </section>
         </main>
