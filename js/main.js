@@ -1,5 +1,5 @@
-// Получаем доступ к Firestore
-const db = firebase.firestore();
+import { db } from './firebase-config.js';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 // Базовая диагностика
 console.log('Начало выполнения скрипта');
@@ -14,7 +14,7 @@ console.log('Начало выполнения скрипта');
 })();
 
 // Функция для отображения опроса
-function showSurvey() {
+async function showSurvey() {
     console.log('Вызвана функция showSurvey');
     try {
         const container = document.getElementById('survey-content');
@@ -25,21 +25,7 @@ function showSurvey() {
             const surveyId = params.get('surveyId') || 'DEMO';
             console.log('ID опроса:', surveyId);
             
-            // Загружаем опрос из Firebase
-            db.collection('surveys').doc(surveyId).get()
-                .then((doc) => {
-                    if (doc.exists) {
-                        const surveyData = doc.data();
-                        renderSurvey(container, surveyData);
-                    } else {
-                        // Если опрос не найден, показываем демо-версию
-                        renderDemoSurvey(container, surveyId);
-                    }
-                })
-                .catch((error) => {
-                    console.error('Ошибка при загрузке опроса:', error);
-                    renderDemoSurvey(container, surveyId);
-                });
+            renderDemoSurvey(container, surveyId);
         }
     } catch (error) {
         console.error('Ошибка:', error);
@@ -85,14 +71,8 @@ function renderDemoSurvey(container, surveyId) {
     `;
 }
 
-// Функция для отображения реального опроса
-function renderSurvey(container, surveyData) {
-    // TODO: Реализовать отображение динамического опроса
-    renderDemoSurvey(container, surveyData.id);
-}
-
 // Функция отправки опроса
-window.submitSurvey = function() {
+window.submitSurvey = async function() {
     const button = document.querySelector('.submit-button');
     const container = document.getElementById('survey-content');
     
@@ -100,32 +80,32 @@ window.submitSurvey = function() {
         button.disabled = true;
         button.textContent = 'Отправка...';
         
-        // Собираем ответы
-        const answers = {
-            q1: document.querySelector('input[name="q1"]:checked')?.value,
-            q2: document.querySelector('textarea[name="q2"]')?.value,
-            q3: document.querySelector('input[name="q3"]:checked')?.value,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            surveyId: new URLSearchParams(window.location.search).get('surveyId') || 'DEMO'
-        };
-        
-        // Сохраняем ответы в Firebase
-        db.collection('responses').add(answers)
-            .then(() => {
-                container.innerHTML = `
-                    <div class="success-message">
-                        <div class="success-icon">✓</div>
-                        <h3>Спасибо за ваши ответы!</h3>
-                        <p>Ваше мнение очень важно для нас.</p>
-                    </div>
-                `;
-            })
-            .catch((error) => {
-                console.error('Ошибка при сохранении ответов:', error);
-                button.disabled = false;
-                button.textContent = 'Отправить ответы';
-                alert('Произошла ошибка при отправке ответов. Пожалуйста, попробуйте еще раз.');
-            });
+        try {
+            // Собираем ответы
+            const answers = {
+                q1: document.querySelector('input[name="q1"]:checked')?.value,
+                q2: document.querySelector('textarea[name="q2"]')?.value,
+                q3: document.querySelector('input[name="q3"]:checked')?.value,
+                timestamp: serverTimestamp(),
+                surveyId: new URLSearchParams(window.location.search).get('surveyId') || 'DEMO'
+            };
+            
+            // Сохраняем ответы в Firebase
+            await addDoc(collection(db, 'responses'), answers);
+            
+            container.innerHTML = `
+                <div class="success-message">
+                    <div class="success-icon">✓</div>
+                    <h3>Спасибо за ваши ответы!</h3>
+                    <p>Ваше мнение очень важно для нас.</p>
+                </div>
+            `;
+        } catch (error) {
+            console.error('Ошибка при сохранении ответов:', error);
+            button.disabled = false;
+            button.textContent = 'Отправить ответы';
+            alert('Произошла ошибка при отправке ответов. Пожалуйста, попробуйте еще раз.');
+        }
     }
 };
 
