@@ -1,5 +1,4 @@
 import { db } from './firebase-config.js';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 // Базовая диагностика
 console.log('Начало выполнения скрипта');
@@ -34,6 +33,7 @@ async function showSurvey() {
 
 // Функция для отображения демо-опроса
 function renderDemoSurvey(container, surveyId) {
+    console.log('Рендеринг демо-опроса:', surveyId);
     container.innerHTML = `
         <div class="survey-header">
             <h3>Тестовый опрос #${surveyId}</h3>
@@ -69,6 +69,7 @@ function renderDemoSurvey(container, surveyId) {
             <button id="submitButton" class="submit-button">Отправить ответы</button>
         </div>
     `;
+    console.log('Опрос отрендерен');
 
     // Добавляем обработчик события для кнопки отправки
     document.getElementById('submitButton').addEventListener('click', submitSurvey);
@@ -76,6 +77,7 @@ function renderDemoSurvey(container, surveyId) {
 
 // Функция отправки опроса
 async function submitSurvey() {
+    console.log('Начало отправки опроса');
     const button = document.querySelector('.submit-button');
     const container = document.getElementById('survey-content');
     
@@ -89,14 +91,14 @@ async function submitSurvey() {
                 q1: document.querySelector('input[name="q1"]:checked')?.value,
                 q2: document.querySelector('textarea[name="q2"]')?.value,
                 q3: document.querySelector('input[name="q3"]:checked')?.value,
-                timestamp: serverTimestamp(),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 surveyId: new URLSearchParams(window.location.search).get('surveyId') || 'DEMO'
             };
 
-            console.log('Отправляем ответы:', answers);
+            console.log('Собранные ответы:', answers);
             
             // Сохраняем ответы в Firebase
-            const docRef = await addDoc(collection(db, 'responses'), answers);
+            const docRef = await db.collection('responses').add(answers);
             console.log('Ответ сохранен с ID:', docRef.id);
             
             container.innerHTML = `
