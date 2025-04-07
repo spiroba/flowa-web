@@ -12,13 +12,14 @@ document.addEventListener('DOMContentLoaded', function() {
             params[key] = value;
         }
         
-        // Извлекаем ID опроса также из пути, если он присутствует в формате /p/{code}
-        const pathParts = window.location.pathname.split('/');
-        if (pathParts.length >= 3 && pathParts[1] === 'p') {
-            params.surveyId = pathParts[2];
+        // Проверяем путь URL для поддержки формата /p/{code}
+        const path = window.location.pathname;
+        const matches = path.match(/\/p\/([^\/]+)\/?$/);
+        if (matches && matches[1]) {
+            params.surveyId = matches[1];
+            console.log('Найден ID опроса в пути URL:', params.surveyId);
         }
         
-        // Логируем параметры для отладки
         console.log('Полученные параметры URL:', params);
         
         return params;

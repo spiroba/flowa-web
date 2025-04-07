@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flowa - Интерактивные опросы</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" href="../favicon.ico" type="image/x-icon">
+    
+    <!-- Перенаправление на корневую страницу с передачей ID опроса -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Получаем код опроса из URL пути
+            const path = window.location.pathname;
+            const pathParts = path.split('/');
+            const pollCode = pathParts[pathParts.length - 1] || '';
+            
+            // Получаем все параметры из URL
+            const queryParams = new URLSearchParams(window.location.search);
+            
+            // Добавляем параметр pollId
+            if (pollCode && pollCode !== 'index.html' && pollCode !== '') {
+                queryParams.set('surveyId', pollCode);
+            }
+            
+            // Перенаправляем на корневую страницу
+            window.location.href = `../?${queryParams.toString()}`;
+        });
+    </script>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Flowa</h1>
+        </header>
+        
+        <main>
+            <section class="survey-section">
+                <h2>Опрос</h2>
+                <div id="survey-content">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>Перенаправление...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>&copy; 2024 Flowa. Все права защищены.</p>
+        </footer>
+    </div>
+</body>
+</html> 
