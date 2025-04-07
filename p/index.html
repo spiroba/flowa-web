@@ -20,13 +20,13 @@
         // Получаем все параметры из URL
         const queryParams = new URLSearchParams(window.location.search);
         
-        // Добавляем параметр pollId
+        // Добавляем параметр surveyId
         if (pollCode && pollCode !== 'index.html' && pollCode !== '') {
             queryParams.set('surveyId', pollCode);
         }
         
         // Перенаправляем на корневую страницу немедленно
-        window.location.href = `../?${queryParams.toString()}`;
+        window.location.href = `/flowa-web/?${queryParams.toString()}`;
     </script>
 </head>
 <body>
