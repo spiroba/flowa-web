@@ -1,6 +1,12 @@
 // Глобальная функция инициализации
 window.initializeFlowaSurvey = function(retryCount = 0) {
-    console.log('Попытка инициализации Flowa #' + (retryCount + 1));
+    console.log('=== Диагностика Flowa ===');
+    console.log('Версия: 1.5.0 (с расширенной диагностикой)');
+    console.log('Время:', new Date().toISOString());
+    console.log('Состояние DOM:', document.readyState);
+    console.log('URL:', window.location.href);
+    console.log('Referrer:', document.referrer);
+    console.log('User Agent:', navigator.userAgent);
     
     // Получаем параметры из URL
     const params = new URLSearchParams(window.location.search);
@@ -12,21 +18,37 @@ window.initializeFlowaSurvey = function(retryCount = 0) {
         const matches = path.match(/\/p\/([^\/]+)\/?$/);
         if (matches && matches[1]) {
             surveyId = matches[1];
+            console.log('ID опроса получен из пути:', surveyId);
         }
+    } else {
+        console.log('ID опроса получен из параметров:', surveyId);
     }
     
-    console.log('ID опроса:', surveyId);
+    console.log('Итоговый ID опроса:', surveyId);
+    
+    // Проверяем структуру DOM
+    console.log('=== Диагностика DOM ===');
+    console.log('Body присутствует:', !!document.body);
+    console.log('Элементы в body:', document.body ? document.body.children.length : 0);
+    console.log('Наличие #app:', !!document.getElementById('app'));
+    console.log('Наличие .survey-section:', !!document.querySelector('.survey-section'));
+    console.log('Наличие #survey-content:', !!document.getElementById('survey-content'));
     
     // Проверяем наличие контейнера
     const container = document.getElementById('survey-content');
     if (!container) {
-        console.log('Контейнер не найден, попытка #' + (retryCount + 1));
-        if (retryCount < 5) { // Пробуем максимум 5 раз
+        console.log(`Попытка #${retryCount + 1}: контейнер не найден`);
+        console.log('Текущее содержимое body:', document.body ? document.body.innerHTML.substring(0, 200) + '...' : 'body отсутствует');
+        
+        if (retryCount < 5) {
+            console.log(`Запланирована следующая попытка через 200мс`);
             setTimeout(() => {
                 window.initializeFlowaSurvey(retryCount + 1);
-            }, 200); // Увеличиваем интервал между попытками
+            }, 200);
         } else {
             console.error('Не удалось найти контейнер после 5 попыток');
+            console.log('=== Финальная диагностика ===');
+            console.log('HTML страницы:', document.documentElement.innerHTML.substring(0, 500) + '...');
         }
         return;
     }
@@ -126,11 +148,29 @@ window.initializeFlowaSurvey = function(retryCount = 0) {
     }
 };
 
+// Отслеживаем все этапы загрузки страницы
+document.addEventListener('readystatechange', function() {
+    console.log('Изменение состояния DOM:', document.readyState);
+});
+
+// Логируем ошибки
+window.onerror = function(msg, url, line, col, error) {
+    console.error('=== Ошибка JavaScript ===');
+    console.error('Сообщение:', msg);
+    console.error('URL:', url);
+    console.error('Строка:', line);
+    console.error('Колонка:', col);
+    console.error('Стек вызовов:', error && error.stack);
+    return false;
+};
+
 // Запускаем первую попытку инициализации немедленно
+console.log('Запуск немедленной инициализации');
 window.initializeFlowaSurvey();
 
 // Дополнительно пробуем после полной загрузки DOM
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOMContentLoaded событие');
+    console.log('=== DOMContentLoaded ===');
+    console.log('Время от запуска:', performance.now(), 'мс');
     window.initializeFlowaSurvey();
 });
