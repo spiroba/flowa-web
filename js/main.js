@@ -66,13 +66,16 @@ function renderDemoSurvey(container, surveyId) {
             </div>
         </div>
         <div class="survey-actions">
-            <button onclick="submitSurvey()" class="submit-button">Отправить ответы</button>
+            <button id="submitButton" class="submit-button">Отправить ответы</button>
         </div>
     `;
+
+    // Добавляем обработчик события для кнопки отправки
+    document.getElementById('submitButton').addEventListener('click', submitSurvey);
 }
 
 // Функция отправки опроса
-window.submitSurvey = async function() {
+async function submitSurvey() {
     const button = document.querySelector('.submit-button');
     const container = document.getElementById('survey-content');
     
@@ -89,9 +92,12 @@ window.submitSurvey = async function() {
                 timestamp: serverTimestamp(),
                 surveyId: new URLSearchParams(window.location.search).get('surveyId') || 'DEMO'
             };
+
+            console.log('Отправляем ответы:', answers);
             
             // Сохраняем ответы в Firebase
-            await addDoc(collection(db, 'responses'), answers);
+            const docRef = await addDoc(collection(db, 'responses'), answers);
+            console.log('Ответ сохранен с ID:', docRef.id);
             
             container.innerHTML = `
                 <div class="success-message">
@@ -107,7 +113,7 @@ window.submitSurvey = async function() {
             alert('Произошла ошибка при отправке ответов. Пожалуйста, попробуйте еще раз.');
         }
     }
-};
+}
 
 // Отслеживаем загрузку страницы
 document.addEventListener('DOMContentLoaded', function() {
