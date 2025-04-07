@@ -25,7 +25,7 @@
             <section class="survey-section">
                 <h2>Опрос</h2>
                 <div id="survey-content">
-                    <!-- Содержимое опроса будет загружено сюда через JavaScript -->
+                    <!-- ВАЖНО: Содержимое опроса будет загружено сюда через JavaScript -->
                     <div class="loading-spinner">
                         <div class="spinner"></div>
                         <p>Загрузка опроса...</p>
@@ -33,7 +33,7 @@
                 </div>
             </section>
             
-            <div class="info-section">
+            <div class="info-section" style="display: none;">
                 <h3>Как это работает?</h3>
                 <ol>
                     <li>Отсканируйте QR-код с помощью камеры телефона</li>
@@ -53,6 +53,8 @@
             </div>
         </footer>
     </div>
+
+    <!-- Сначала загружаем необходимые скрипты -->
     <script src="js/main.js"></script>
 </body>
 </html>

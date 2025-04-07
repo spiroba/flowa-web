@@ -1,11 +1,17 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация приложения с явным логированием
-    console.log('Flowa web application initialized - версия 1.2.0');
-    console.log('Проверка наличия элемента survey-content:', document.getElementById('survey-content') ? 'найден' : 'не найден');
+// Немедленно запускаем инициализацию при загрузке скрипта
+(function() {
+    console.log('Скрипт Flowa запущен - версия 1.3.0');
+    console.log('Проверка DOM перед DOMContentLoaded:', document.readyState);
     
-    // Получаем параметры из URL
-    function getUrlParams() {
+    // Функция немедленной инициализации - не зависит от DOMContentLoaded
+    function initializeSurvey() {
+        console.log('Начата немедленная инициализация опроса');
+        console.log('Текущее состояние DOM:', document.readyState);
+        
+        // Объект для хранения параметров URL
         const params = {};
+        
+        // Получаем параметры из URL-запроса
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
         
@@ -13,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
             params[key] = value;
         }
         
-        // Проверяем путь URL для поддержки формата /p/{code}
+        // Проверяем URL-путь для формата /p/{code}
         const path = window.location.pathname;
         const matches = path.match(/\/p\/([^\/]+)\/?$/);
         if (matches && matches[1]) {
@@ -21,16 +27,12 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Найден ID опроса в пути URL:', params.surveyId);
         }
         
-        console.log('Полученные параметры URL:', params);
+        console.log('Параметры URL:', params);
         
-        return params;
-    }
-    
-    // Демо опросы для отображения
-    const demoSurveys = {
-        // Универсальный опрос, который будет показан для любого surveyId
-        "default": {
-            title: "Оценка качества обслуживания",
+        // Демонстрационные данные опроса
+        const surveyData = {
+            id: params.surveyId || 'DEMO',
+            title: params.surveyId ? `Опрос #${params.surveyId}` : 'Демонстрационный опрос',
             description: "Пожалуйста, уделите несколько минут, чтобы оценить наш сервис",
             questions: [
                 {
@@ -45,210 +47,187 @@ document.addEventListener('DOMContentLoaded', function() {
                     text: "Что мы можем улучшить?"
                 }
             ]
-        }
-    };
-    
-    // Эмуляция загрузки данных опроса (вместо реального API)
-    function fetchSurveyData(surveyId) {
-        return new Promise((resolve, reject) => {
-            console.log('Запуск fetchSurveyData для ID:', surveyId);
-            // Уменьшаем задержку до 100мс для максимально быстрой загрузки
-            setTimeout(() => {
-                if (surveyId) {
-                    console.log(`Получение данных для опроса с ID: ${surveyId}`);
-                    // Для демонстрации всегда используем один и тот же опрос,
-                    // но используем ID из URL для персонализации
-                    const surveyData = { ...demoSurveys.default };
-                    surveyData.id = surveyId;
-                    surveyData.title = `Опрос #${surveyId}`;
-                    resolve(surveyData);
-                } else {
-                    console.error('ID опроса не найден');
-                    reject(new Error('Идентификатор опроса не найден'));
-                }
-            }, 100); // Минимальная задержка для эмуляции API
-        });
-    }
-    
-    // Отрисовка опроса
-    function renderSurvey(surveyData) {
-        console.log('Начинаем отрисовку опроса:', surveyData);
-        const surveyContent = document.getElementById('survey-content');
+        };
         
-        if (!surveyContent) {
-            console.error('Элемент survey-content не найден в DOM!');
-            return;
+        // Функция для отрисовки вопроса в зависимости от типа
+        function renderQuestion(question) {
+            let questionHtml = `
+                <div class="question" data-id="${question.id}">
+                    <div class="question-text">${question.text}</div>
+            `;
+            
+            if (question.type === 'rating') {
+                questionHtml += `
+                    <div class="rating-control">
+                        ${Array.from({length: question.scale}, (_, i) => i + 1).map(n => `
+                            <label class="rating-item">
+                                <input type="radio" name="question_${question.id}" value="${n}">
+                                <span>${n}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (question.type === 'text') {
+                questionHtml += `
+                    <div class="text-control">
+                        <textarea placeholder="Введите ваш ответ здесь..." rows="4"></textarea>
+                    </div>
+                `;
+            }
+            
+            questionHtml += `</div>`;
+            return questionHtml;
         }
         
-        console.log('survey-content найден, продолжаем отрисовку');
-        
-        const surveyHtml = `
-            <div class="survey-header">
-                <h3>${surveyData.title}</h3>
-                <p>${surveyData.description}</p>
-            </div>
-            <div class="survey-questions">
-                ${surveyData.questions.map(question => renderQuestion(question)).join('')}
-            </div>
-            <div class="survey-actions">
-                <button type="button" class="btn btn-submit" id="submit-survey">Отправить ответы</button>
-            </div>
-        `;
-        
-        surveyContent.innerHTML = surveyHtml;
-        console.log('HTML опроса отрисован, добавляем обработчик');
-        
-        // Добавляем обработчик события для отправки
-        const submitButton = document.getElementById('submit-survey');
-        if (submitButton) {
-            submitButton.addEventListener('click', function() {
-                submitSurvey(surveyData.id);
+        // Функция для отправки данных опроса
+        function setupSubmitHandler() {
+            const submitBtn = document.getElementById('submit-survey');
+            if (!submitBtn) {
+                console.error('Кнопка отправки не найдена!');
+                return;
+            }
+            
+            submitBtn.addEventListener('click', function() {
+                console.log(`Отправка данных опроса с ID: ${surveyData.id}`);
+                
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Отправка...';
+                
+                // Эмулируем отправку данных
+                setTimeout(() => {
+                    const surveyContent = document.getElementById('survey-content');
+                    if (!surveyContent) {
+                        console.error('Элемент survey-content не найден при отправке!');
+                        return;
+                    }
+                    
+                    surveyContent.innerHTML = `
+                        <div class="success-message">
+                            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                            </svg>
+                            <h3>Спасибо за ваши ответы!</h3>
+                            <p>Ваше мнение очень важно для нас.</p>
+                        </div>
+                    `;
+                    console.log('Успешно отображено сообщение об успешной отправке');
+                }, 1000);
             });
-            console.log('Обработчик на кнопку добавлен');
-        } else {
-            console.error('Кнопка submit-survey не найдена после отрисовки!');
-        }
-    }
-    
-    // Отрисовка вопроса в зависимости от типа
-    function renderQuestion(question) {
-        console.log('Отрисовка вопроса:', question);
-        let questionHtml = `
-            <div class="question" data-id="${question.id}">
-                <div class="question-text">${question.text}</div>
-        `;
-        
-        if (question.type === 'rating') {
-            questionHtml += `
-                <div class="rating-control">
-                    ${Array.from({length: question.scale}, (_, i) => i + 1).map(n => `
-                        <label class="rating-item">
-                            <input type="radio" name="question_${question.id}" value="${n}">
-                            <span>${n}</span>
-                        </label>
-                    `).join('')}
-                </div>
-            `;
-        } else if (question.type === 'text') {
-            questionHtml += `
-                <div class="text-control">
-                    <textarea placeholder="Введите ваш ответ здесь..." rows="4"></textarea>
-                </div>
-            `;
+            
+            console.log('Обработчик отправки настроен');
         }
         
-        questionHtml += `</div>`;
-        return questionHtml;
-    }
-    
-    // Эмуляция отправки данных
-    function submitSurvey(surveyId) {
-        console.log(`Отправка данных опроса с ID: ${surveyId}`);
-        const submitBtn = document.getElementById('submit-survey');
-        if (!submitBtn) {
-            console.error('Кнопка отправки не найдена!');
-            return;
-        }
-        
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Отправка...';
-        
-        // Эмулируем отправку данных
-        setTimeout(() => {
-            const surveyContent = document.getElementById('survey-content');
-            if (!surveyContent) {
-                console.error('Элемент survey-content не найден при отправке!');
+        // Функция для отображения опроса
+        function displaySurvey() {
+            const surveyContainer = document.getElementById('survey-content');
+            if (!surveyContainer) {
+                console.error('КРИТИЧЕСКАЯ ОШИБКА: Элемент #survey-content не найден в DOM!');
+                
+                // Дополнительная диагностика
+                console.log('Текущие элементы в body:', document.body.innerHTML.substring(0, 500));
+                
+                // Попытка создать элемент, если он не существует
+                if (document.querySelector('.survey-section')) {
+                    console.log('Секция опроса найдена, создаем элемент survey-content');
+                    const surveySection = document.querySelector('.survey-section');
+                    const newSurveyContent = document.createElement('div');
+                    newSurveyContent.id = 'survey-content';
+                    surveySection.appendChild(newSurveyContent);
+                    
+                    // Пытаемся отобразить содержимое в новом элементе
+                    displaySurvey();
+                    return;
+                }
+                
                 return;
             }
             
-            surveyContent.innerHTML = `
-                <div class="success-message">
-                    <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                    </svg>
-                    <h3>Спасибо за ваши ответы!</h3>
-                    <p>Ваше мнение очень важно для нас.</p>
+            console.log('survey-content найден, отображаем опрос');
+            
+            // Готовим HTML для опроса
+            const surveyHtml = `
+                <div class="survey-header">
+                    <h3>${surveyData.title}</h3>
+                    <p>${surveyData.description}</p>
+                </div>
+                <div class="survey-questions">
+                    ${surveyData.questions.map(q => renderQuestion(q)).join('')}
+                </div>
+                <div class="survey-actions">
+                    <button type="button" class="btn btn-submit" id="submit-survey">Отправить ответы</button>
                 </div>
             `;
-            console.log('Успешно отображено сообщение об успешной отправке');
-        }, 1000);
-    }
-    
-    // Функция для немедленного отображения демо-опроса
-    function forceLoadDemoSurvey(surveyId) {
-        console.log(`Начало принудительной загрузки демо-опроса для ID: ${surveyId}`);
-        const surveyData = { ...demoSurveys.default };
-        surveyData.id = surveyId || 'DEMO';
-        surveyData.title = surveyId ? `Опрос #${surveyId}` : 'Демонстрационный опрос';
-        
-        // Явное удаление загрузчика перед отрисовкой
-        const surveyContent = document.getElementById('survey-content');
-        if (surveyContent) {
-            console.log('Очищаем содержимое перед загрузкой демо-опроса');
-            // Удаляем спиннер загрузки, если он есть
-            const spinner = surveyContent.querySelector('.loading-spinner');
-            if (spinner) {
-                spinner.remove();
-                console.log('Спиннер загрузки удален');
-            }
+            
+            // Вставляем HTML в контейнер
+            surveyContainer.innerHTML = surveyHtml;
+            console.log('HTML опроса отрисован');
+            
+            // Настраиваем обработчик отправки
+            setupSubmitHandler();
         }
         
-        renderSurvey(surveyData);
-        console.log('Демо-опрос должен быть отрисован');
-    }
-    
-    // Загрузка контента опроса
-    function loadSurveyContent() {
-        const params = getUrlParams();
-        const surveyId = params.surveyId || params.id || '';
-        
-        console.log(`Начало загрузки опроса с ID: ${surveyId}`);
-        
-        if (surveyId) {
-            console.log('ID опроса найден, начинаем загрузку демо-опроса');
-            // НЕМЕДЛЕННО показываем демо-опрос без задержки
-            forceLoadDemoSurvey(surveyId);
-            
-            // Попытка получить реальные данные выполняется параллельно, но не блокирует отображение
-            console.log('Параллельно запускаем загрузку реальных данных');
-            fetchSurveyData(surveyId)
-                .then(data => {
-                    // Реальные данные можно будет использовать в будущем
-                    console.log('Данные опроса успешно загружены, но используем демо-версию');
-                })
-                .catch(error => {
-                    console.error('Ошибка загрузки опроса:', error);
-                });
-        } else {
-            console.log('ID опроса не указан, отображаем пустую страницу');
-            const surveyContent = document.getElementById('survey-content');
-            if (!surveyContent) {
-                console.error('Элемент survey-content не найден для отображения сообщения об ошибке!');
+        // Функция для отображения сообщения об ошибке
+        function displayError() {
+            const surveyContainer = document.getElementById('survey-content');
+            if (!surveyContainer) {
+                console.error('КРИТИЧЕСКАЯ ОШИБКА: Элемент #survey-content не найден в DOM!');
                 return;
             }
             
-            surveyContent.innerHTML = `
+            surveyContainer.innerHTML = `
                 <div class="no-survey">
                     <p>Опрос не найден. Пожалуйста, убедитесь, что вы отсканировали правильный QR код.</p>
                     <p>Если проблема повторяется, обратитесь к администратору.</p>
                 </div>
             `;
         }
-    }
-
-    // Запускаем инициализацию с небольшой задержкой для надежности
-    console.log('Запланирован запуск loadSurveyContent с задержкой 10мс');
-    setTimeout(loadSurveyContent, 10);
-    
-    // Экстренная диагностика - проверяем DOM каждые 500мс в течение 3 секунд
-    for (let i = 1; i <= 6; i++) {
-        setTimeout(() => {
-            const surveyContent = document.getElementById('survey-content');
-            console.log(`Диагностика #${i}: элемент survey-content ${surveyContent ? 'найден' : 'НЕ НАЙДЕН'}`);
-            if (surveyContent) {
-                console.log(`Содержимое: ${surveyContent.innerHTML.substring(0, 50)}...`);
+        
+        // Основная логика отображения
+        if (params.surveyId) {
+            console.log('ID опроса найден, отображаем опрос');
+            
+            // Если DOM еще не загружен, ждем загрузки
+            if (document.readyState === 'loading') {
+                console.log('DOM еще не загружен, ждем DOMContentLoaded');
+                document.addEventListener('DOMContentLoaded', displaySurvey);
+            } else {
+                // DOM уже доступен, отображаем опрос немедленно
+                console.log('DOM уже загружен, отображаем опрос немедленно');
+                displaySurvey();
             }
-        }, i * 500);
+        } else {
+            console.log('ID опроса не найден, отображаем сообщение об ошибке');
+            
+            // Если DOM еще не загружен, ждем загрузки
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', displayError);
+            } else {
+                // DOM уже доступен
+                displayError();
+            }
+        }
     }
-});
+    
+    // Запуск с минимальной задержкой для гарантии загрузки DOM
+    setTimeout(initializeSurvey, 0);
+    
+    // Дополнительно выполняем при полной загрузке DOM
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOMContentLoaded: страница полностью загружена');
+        console.log('Состояние элемента survey-content:', 
+            document.getElementById('survey-content') ? 'НАЙДЕН' : 'НЕ НАЙДЕН');
+        
+        // Проверяем содержимое элемента survey-content
+        if (document.getElementById('survey-content')) {
+            const content = document.getElementById('survey-content').innerHTML;
+            console.log('Содержимое survey-content:', content.substring(0, 100) + '...');
+            
+            // Если элемент содержит только спиннер загрузки, запускаем инициализацию повторно
+            if (content.includes('loading-spinner')) {
+                console.log('Обнаружен спиннер загрузки, принудительно запускаем инициализацию опроса');
+                initializeSurvey();
+            }
+        }
+    });
+})();
