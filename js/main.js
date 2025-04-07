@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Эмуляция загрузки данных опроса (вместо реального API)
     function fetchSurveyData(surveyId) {
         return new Promise((resolve, reject) => {
-            // Эмулируем задержку запроса
+            // Уменьшаем задержку до 500мс для более быстрой загрузки
             setTimeout(() => {
                 if (surveyId) {
                     // Для демонстрации всегда используем один и тот же опрос,
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     reject(new Error('Идентификатор опроса не найден'));
                 }
-            }, 1500); // 1.5 секунды задержки для эмуляции загрузки
+            }, 500); // Уменьшаем до 500мс для более быстрого отображения
         });
     }
     
@@ -133,6 +133,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
     
+    // Функция для немедленного форсирования загрузки
+    function forceLoadDemoSurvey(surveyId) {
+        const surveyData = { ...demoSurveys.default };
+        surveyData.id = surveyId;
+        surveyData.title = `Опрос #${surveyId}`;
+        renderSurvey(surveyData);
+    }
+    
     // Загрузка контента опроса
     function loadSurveyContent() {
         const params = getUrlParams();
@@ -147,11 +155,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             
+            // Добавляем таймаут, чтобы принудительно показать опрос,
+            // если он не загрузился в течение 3 секунд
+            const forceLoadTimeout = setTimeout(() => {
+                forceLoadDemoSurvey(params.surveyId);
+            }, 3000);
+            
             fetchSurveyData(params.surveyId)
                 .then(data => {
+                    clearTimeout(forceLoadTimeout); // Очищаем таймаут если данные пришли нормально
                     renderSurvey(data);
                 })
                 .catch(error => {
+                    clearTimeout(forceLoadTimeout); // Очищаем таймаут если произошла ошибка
                     surveyContent.innerHTML = `
                         <div class="error-message">
                             <p>Ошибка при загрузке опроса: ${error.message}</p>
