@@ -44,13 +44,34 @@ const testSurvey = {
 
 // Функция для создания опроса
 async function createSurvey() {
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = '<p>Создание опроса...</p>';
+    
     try {
         // Создаем документ с указанным ID
         await db.collection('surveys').doc(testSurvey.id).set(testSurvey);
+        
+        const surveyUrl = `https://spiroba.github.io/flowa-web/?surveyId=${testSurvey.id}`;
+        
+        resultDiv.innerHTML = `
+            <div class="success">
+                <h3>Опрос успешно создан!</h3>
+                <p>Ссылка на опрос:</p>
+                <a href="${surveyUrl}" target="_blank">${surveyUrl}</a>
+                <p>Нажмите на ссылку, чтобы открыть опрос в новой вкладке.</p>
+            </div>
+        `;
+        
         console.log('Опрос успешно создан!');
-        console.log('Ссылка на опрос:', `https://spiroba.github.io/flowa-web/?surveyId=${testSurvey.id}`);
+        console.log('Ссылка на опрос:', surveyUrl);
     } catch (error) {
         console.error('Ошибка при создании опроса:', error);
+        resultDiv.innerHTML = `
+            <div class="error">
+                <h3>Ошибка!</h3>
+                <p>Не удалось создать опрос: ${error.message}</p>
+            </div>
+        `;
     }
 }
 
