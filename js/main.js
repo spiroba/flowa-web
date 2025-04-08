@@ -35,62 +35,111 @@ async function showSurvey() {
         
         if (container) {
             const params = new URLSearchParams(window.location.search);
-            const surveyId = params.get('surveyId') || 'DEMO';
+            const surveyId = params.get('surveyId');
             console.log('ID опроса:', surveyId);
             
-            renderDemoSurvey(container, surveyId);
+            if (!surveyId) {
+                renderError(container, 'Не указан ID опроса');
+                return;
+            }
+
+            // Загружаем опрос из Firestore
+            const surveyDoc = await db.collection('surveys').doc(surveyId).get();
+            
+            if (!surveyDoc.exists) {
+                renderError(container, 'Опрос не найден');
+                return;
+            }
+
+            const survey = surveyDoc.data();
+            renderSurvey(container, survey);
         }
     } catch (error) {
         console.error('Ошибка:', error);
+        const container = document.getElementById('survey-content');
+        if (container) {
+            renderError(container, 'Произошла ошибка при загрузке опроса');
+        }
     }
 }
 
-// Функция для отображения демо-опроса
-function renderDemoSurvey(container, surveyId) {
-    console.log('Рендеринг демо-опроса:', surveyId);
+// Функция для отображения ошибки
+function renderError(container, message) {
+    container.innerHTML = `
+        <div class="error-message">
+            <div class="error-icon">!</div>
+            <h3>Ошибка</h3>
+            <p>${message}</p>
+        </div>
+    `;
+}
+
+// Функция для отображения опроса
+function renderSurvey(container, survey) {
+    console.log('Рендеринг опроса:', survey);
+    
+    let questionsHTML = '';
+    survey.questions.forEach((question, index) => {
+        let inputHTML = '';
+        
+        switch (question.type) {
+            case 'rating':
+                inputHTML = `
+                    <div class="rating-control">
+                        ${[1,2,3,4,5].map(value => `
+                            <label>
+                                <input type="radio" name="q${index}" value="${value}">
+                                <span>${value}</span>
+                            </label>
+                        `).join('')}
+                    </div>`;
+                break;
+            case 'text':
+                inputHTML = `
+                    <div class="text-control">
+                        <textarea name="q${index}" rows="3" placeholder="Ваш ответ..."></textarea>
+                    </div>`;
+                break;
+            case 'choice':
+                inputHTML = `
+                    <div class="choice-control">
+                        ${question.options.map(option => `
+                            <label>
+                                <input type="radio" name="q${index}" value="${option.value}">
+                                ${option.label}
+                            </label>
+                        `).join('')}
+                    </div>`;
+                break;
+        }
+
+        questionsHTML += `
+            <div class="question">
+                <div class="question-text">${question.text}</div>
+                ${inputHTML}
+            </div>
+        `;
+    });
+
     container.innerHTML = `
         <div class="survey-header">
-            <h3>Тестовый опрос #${surveyId}</h3>
-            <p>Пожалуйста, ответьте на несколько вопросов</p>
+            <h3>${survey.title}</h3>
+            <p>${survey.description || ''}</p>
         </div>
         <div class="survey-questions">
-            <div class="question">
-                <div class="question-text">Как вы оцениваете наш сервис?</div>
-                <div class="rating-control">
-                    <label><input type="radio" name="q1" value="1"><span>1</span></label>
-                    <label><input type="radio" name="q1" value="2"><span>2</span></label>
-                    <label><input type="radio" name="q1" value="3"><span>3</span></label>
-                    <label><input type="radio" name="q1" value="4"><span>4</span></label>
-                    <label><input type="radio" name="q1" value="5"><span>5</span></label>
-                </div>
-            </div>
-            <div class="question">
-                <div class="question-text">Что можно улучшить?</div>
-                <div class="text-control">
-                    <textarea name="q2" rows="3" placeholder="Ваш ответ..."></textarea>
-                </div>
-            </div>
-            <div class="question">
-                <div class="question-text">Порекомендуете ли вы нас друзьям?</div>
-                <div class="choice-control">
-                    <label><input type="radio" name="q3" value="yes">Да</label>
-                    <label><input type="radio" name="q3" value="no">Нет</label>
-                    <label><input type="radio" name="q3" value="maybe">Возможно</label>
-                </div>
-            </div>
+            ${questionsHTML}
         </div>
         <div class="survey-actions">
             <button id="submitButton" class="submit-button">Отправить ответы</button>
         </div>
     `;
-    console.log('Опрос отрендерен');
 
     // Добавляем обработчик события для кнопки отправки
-    document.getElementById('submitButton').addEventListener('click', submitSurvey);
+    document.getElementById('submitButton').addEventListener('click', () => submitSurvey(survey));
 }
 
 // Функция отправки опроса
-async function submitSurvey() {
+async function submitSurvey(survey) {
     console.log('Начало отправки опроса');
     const button = document.querySelector('.submit-button');
     const container = document.getElementById('survey-content');
@@ -102,11 +151,12 @@ async function submitSurvey() {
         try {
             // Собираем ответы
             const answers = {
-                q1: document.querySelector('input[name="q1"]:checked')?.value,
-                q2: document.querySelector('textarea[name="q2"]')?.value,
-                q3: document.querySelector('input[name="q3"]:checked')?.value,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                surveyId: new URLSearchParams(window.location.search).get('surveyId') || 'DEMO'
+                surveyId: survey.id,
+                answers: survey.questions.map((_, index) => {
+                    const input = document.querySelector(`input[name="q${index}"]:checked, textarea[name="q${index}"]`);
+                    return input ? input.value : null;
+                }),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             console.log('Собранные ответы:', answers);
@@ -118,8 +168,8 @@ async function submitSurvey() {
             container.innerHTML = `
                 <div class="success-message">
                     <div class="success-icon">✓</div>
-                    <h3>Спасибо за ваши ответы!</h3>
-                    <p>Ваше мнение очень важно для нас.</p>
+                    <h3>${survey.successTitle || 'Спасибо за ваши ответы!'}</h3>
+                    <p>${survey.successMessage || 'Ваше мнение очень важно для нас.'}</p>
                 </div>
             `;
         } catch (error) {
