@@ -3,12 +3,17 @@
 <head>
     <title>Создание тестового опроса</title>
     <meta charset="UTF-8">
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline';">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="js/create-survey.js"></script>
 </head>
 <body>
     <h1>Создание тестового опроса</h1>
     <p>Пожалуйста, откройте консоль разработчика (F12), чтобы увидеть результат создания опроса.</p>
+    <div id="result"></div>
 </body>
 </html> 
